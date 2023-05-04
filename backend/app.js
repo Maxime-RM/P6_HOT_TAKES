@@ -1,7 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const path = require('path');
+
+
 
 const usersRoutes = require('./routes/user'); //importation de "backend\routes\user.js"
+const saucesRoutes = require('./routes/sauce'); //importation de "backend\routes\sauce.js"
+
 
 mongoose.connect('mongodb+srv://Miralles:MmG00Ds7gxTDpjp6@clusterp6.4zny5ad.mongodb.net/?retryWrites=true&w=majority',
   { useNewUrlParser: true,
@@ -19,7 +24,11 @@ app.use((req, res, next) => {
     next();
   });
 
+
+app.use('/images', express.static(path.join(__dirname, 'images')));
+
 app.use('/api/auth', usersRoutes);
+app.use('/api/sauces', saucesRoutes);
 
 
 module.exports = app;
