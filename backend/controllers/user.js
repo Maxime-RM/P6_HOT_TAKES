@@ -1,6 +1,7 @@
 const bcrypt = require ('bcrypt')
 const jwt = require('jsonwebtoken')
 const User = require('../models/User')
+const dotenv = require('dotenv').config('.env')
 
 exports.signup = (req, res, next) => {
     bcrypt.hash(req.body.password, 10)
@@ -17,12 +18,12 @@ exports.signup = (req, res, next) => {
   };
 
   exports.login = (req, res, next) => {
-    User.findOne({ email: req.body.email }) //vérification de l'existence de l'utilisateur
+    User.findOne({ email: req.body.email })
         .then(user => {
             if (!user) {
                 return res.status(401).json({ message: 'Mot de passe ou adresse e-mail incorrecte'});
             }
-            bcrypt.compare(req.body.password, user.password) //vérification du mot de passe
+            bcrypt.compare(req.body.password, user.password)
                 .then(valid => {
                     if (!valid) {
                         return res.status(401).json({ message: 'Mot de passe ou adresse e-mail incorrecte' });
@@ -31,7 +32,7 @@ exports.signup = (req, res, next) => {
                             userId: user._id,
                             token: jwt.sign(
                                 { userId: user._id },
-                                'RANDOM_TOKEN_SECRET',
+                                process.env.RANDOM_TOKEN,
                                 { expiresIn: '24h' }
                             )
                         });
