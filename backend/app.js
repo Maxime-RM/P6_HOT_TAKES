@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv').config('.env')
 
 
@@ -27,6 +28,14 @@ app.use((req, res, next) => {
 
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
+
+const limiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 50,
+  message: 'Trop de requêtes effectuées depuis cette adresse IP, veuillez réessayer plus tard.'
+});
+
+app.use(limiter);
 
 app.use('/api/auth', usersRoutes);
 app.use('/api/sauces', saucesRoutes);

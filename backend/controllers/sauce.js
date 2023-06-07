@@ -1,5 +1,7 @@
 const Sauce = require('../models/Sauce')
 const fs = require('fs');
+const path = require('path');
+
 
 exports.getAllSauces = (req, res, next) => {
   Sauce
@@ -49,32 +51,66 @@ exports.updateSauce = (req, res, next) => {
   } : { ...req.body };
 
   delete sauceObject._userId;
-  
+
   // Vérification des champs obligatoires
   if (!sauceObject.name ||
     !sauceObject.manufacturer ||
     !sauceObject.description ||
     !sauceObject.mainPepper ||
     !sauceObject.heat ||
-    !sauceObject.userId){        
-      return res.status(400).json({ error: "Veuillez remplir tous les champs obligatoires" });
-  }else{
-    Sauce
-    .findOne({_id: req.params.id})
-    .then((sauce) => {
-      if (sauce.userId != req.auth.userId) {
-          res.status(403).json({ message : 'Not authorized'});
-      } else {
-          Sauce.updateOne({ _id: req.params.id}, { ...sauceObject, _id: req.params.id})
-          .then(() => res.status(200).json({message : 'Sauce modifié!'}))
-          .catch(error => res.status(401).json({ error }));
-      }
-  })
-  .catch((error) => {
-      res.status(400).json({ error });
-  });}
+    !sauceObject.userId) {
+    return res.status(400).json({ error: "Veuillez remplir tous les champs obligatoires" });
+  } else {
+    Sauce.findOne({ _id: req.params.id })
+      .then((sauce) => {
+        if (sauce.userId != req.auth.userId) {
+          res.status(403).json({ message: 'Not authorized' });
+        } else {
+          // Vérifier si l'image a été modifiée
+          if (sauce.imageUrl !== sauceObject.imageUrl) {
+            // Supprimer l'ancienne image
+            const filename = sauce.imageUrl.split('/images/')[1];
+            const imagePath = path.join(__dirname, '..', 'images', filename);
+            fs.unlink(imagePath, (error) => {
+              if (error) {
+                console.error('Erreur lors de la suppression de l\'image:', error);
+              }
+            });
+          }
 
-   
+          Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
+            .then(() => res.status(200).json({ message: 'Sauce modifiée !' }))
+            .catch(error => res.status(401).json({ error }));
+        }
+      })
+      .catch((error) => {
+        res.status(400).json({ error });
+      });
+  }
+};
+
+exports.deleteSauce = (req, res, next) => {
+  Sauce.findOne({ _id: req.params.id })
+    .then(sauce => {
+      if (sauce.userId != req.auth.userId) {
+        res.status(403).json({ message: 'Not authorized' });
+      } else {
+        const filename = sauce.imageUrl.split('/images/')[1];
+        const imagePath = path.join(__dirname, '..', 'images', filename);
+        fs.unlink(imagePath, (error) => {
+          if (error) {
+            console.error('Erreur lors de la suppression de l\'image:', error);
+          }
+
+          sauce.deleteOne({ _id: req.params.id })
+            .then(() => res.status(200).json({ message: 'Objet supprimé !' }))
+            .catch(error => res.status(401).json({ error }));
+        });
+      }
+    })
+    .catch(error => {
+      res.status(500).json({ error });
+    });
 };
 
 exports.deleteSauce = (req, res, next) => {
